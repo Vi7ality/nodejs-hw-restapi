@@ -2,13 +2,22 @@ const { HttpError, ctrlWrapper } = require("../helpers/index");
 const { Contact, schemas } = require("../models/Contact");
 
 const getAll = async (req, res, next) => {
-  const result = await Contact.find();
+  const { _id: owner } = req.body;
+  const { page = 1, limit = 10 } = req.query;
+  const skip = page * limit;
+  const result = await Contact.find({ owner }, "-createdAt -updatedAt", { skip, limit }).populate(
+    "owner",
+    "name email"
+  );
   res.json(result);
 };
 
 const getById = async (req, res, next) => {
+  const { _id: owner } = req.body;
   const { id } = req.params;
-  const result = await Contact.findById(id);
+  const { page = 1, limit = 10 } = req.query;
+  const skip = page * limit;
+  const result = await Contact.findById({ id, owner }, "-createdAt -updatedAt", { skip, limit });
   if (!result) {
     throw HttpError(404, "Not found");
   }
@@ -16,11 +25,12 @@ const getById = async (req, res, next) => {
 };
 
 const add = async (req, res, next) => {
+  const { _id: owner } = req.body;
   const { error } = schemas.addSchema.validate(req.body);
   if (error) {
     throw HttpError(400, error.message);
   }
-  const result = await Contact.create(req.body);
+  const result = await Contact.create({ ...req.body, owner });
   res.status(201).json(result);
 };
 
