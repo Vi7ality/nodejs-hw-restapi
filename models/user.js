@@ -1,3 +1,4 @@
+// const { string } = require("joi");
 const Joi = require("joi");
 const { Schema, model } = require("mongoose");
 const { handleMongooseError } = require("../helpers/index");
@@ -19,6 +20,10 @@ const userSchema = new Schema(
       default: "starter",
     },
     token: String,
+    avatarUrl: {
+      type: String,
+      required: true,
+    },
   },
   { versionKey: false, timestamps: true }
 );
