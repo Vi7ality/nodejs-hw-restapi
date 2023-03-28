@@ -7,7 +7,7 @@ const { authenticate, upload } = require("../../middlewares");
 
 router.post("/register", ctrl.register);
 router.get("/verify/:verificationCode", ctrl.verifyEmail);
-router.post("verify");
+router.post("/verify", ctrl.resendVerificationEmail);
 router.post("/login", ctrl.login);
 router.get("/current", authenticate, ctrl.getCurrent);
 router.post("/logout", authenticate, ctrl.logout);

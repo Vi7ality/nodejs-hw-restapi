@@ -6,7 +6,8 @@ const gravatar = require("gravatar");
 const path = require("path");
 const fs = require("fs/promises");
 const Jimp = require("jimp");
-const { nanoid } = require("nanoid");
+// const { nanoid } = require("nanoid");
+const { v4: uuidv4 } = require("uuid");
 
 require("dotenv").config();
 const { SECRET_KEY, BASE_URL } = process.env;
@@ -30,7 +31,7 @@ const register = async (req, res) => {
   const hashPassword = await bcrypt.hash(password, 10);
   const avatarURL = await gravatar.url(email);
 
-  const verificationCode = nanoid();
+  const verificationCode = uuidv4();
 
   const newUser = await User.create({
     ...req.body,
@@ -63,6 +64,37 @@ const verifyEmail = async (req, res) => {
 
   res.json({
     message: "Email verify success",
+  });
+};
+
+const resendVerificationEmail = async (req, res) => {
+  const { error } = schemas.registerSchema.validate(req.body);
+  if (error) {
+    throw HttpError(400, error.message);
+  }
+  const { email } = req.body;
+  if (!email) {
+    throw HttpError(400, "missing required field email");
+  }
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw HttpError(401, "Email not found");
+  }
+
+  if (user.verify) {
+    throw HttpError(400, "Verification has already been passed");
+  }
+
+  const verifyEmail = {
+    to: email,
+    subject: "Verify email",
+    html: `<a target="_blank" href="${BASE_URL}/api/auth/verify/${user.verificationCode}">Click verify email</a>`,
+  };
+
+  await sendEmail(verifyEmail);
+
+  res.json({
+    message: "Verify email send success",
   });
 };
 
@@ -137,4 +169,5 @@ module.exports = {
   logout: ctrlWrapper(logout),
   updateAvatar: ctrlWrapper(updateAvatar),
   verifyEmail: ctrlWrapper(verifyEmail),
+  resendVerificationEmail: ctrlWrapper(resendVerificationEmail),
 };
